@@ -16,8 +16,10 @@ own criteria need — these are a starting point, not a fixed set.
 SCENARIOS = [
     {
         # A query the data can match. Criterion 1.
+        # Changed from "vintage graphic tee under $30" to a harder phrasing
+        # that doesn't use exact title words — tests keyword scorer on style tags.
         "name": "matching query completes",
-        "query": "vintage graphic tee under $30",
+        "query": "y2k pastel tee under $30",
         "wardrobe": "example",
         "criterion": 1,
     },

@@ -377,21 +377,21 @@ $ python app.py ask 'designer ballgown size XXS under $5'
 
      `python run_eval.py --label after` -->
 
-**What I changed:**
+**What I changed:** Updated scenario 1 in `scenarios.py` to use the query `"y2k pastel tee under $30"` instead of `"vintage graphic tee under $30"`. The original query used exact words from the item title, so it always scored high via title overlap. The new query uses style-adjacent words ("y2k", "pastel") that appear in style tags and descriptions rather than the title, making the keyword scorer do real work.
 
-**Which failure it was meant to fix:**
+**Which failure it was meant to fix:** Criterion 1's before-run target was 4 of 5, but it passed 5/5 with a query that couldn't reasonably miss. The diagnosis said the scenario was too easy. This change makes the test genuinely probe whether the scorer can surface the right item from indirect signal.
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Full three-tool run returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Empty search stops before tool 2 | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Outfit mentions listing title | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card mentions price and platform | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Max_price filter respected | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Did it help, and how do I know:**
+**Did it help, and how do I know:** Yes — the harder query still surfaced Y2K Baby Tee — Butterfly Print as the top result in all five tries. This confirms the keyword scorer works on style-tag signal, not just title overlap. The result set was smaller (7 items vs 10) and included some noise (cargo pants, biker shorts scored on "y2k" or "pastel"), but the right item ranked first every time because it matched both keywords. The test is now meaningfully harder than before while still passing.
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
