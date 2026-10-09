@@ -297,13 +297,17 @@ All prices ≤ $25 ✓
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Full three-tool run returns a fit card | 4 of 5 | MET (5/5) | All five tries completed and returned a non-empty fit card. The target was 4 of 5 because keyword matching can score zero on some phrasings, but the query "vintage graphic tee" matched reliably every time. |
+| 2 | Empty search stops before tool 2 | 5 of 5 | MET (5/5) | All five tries stopped at the branch and returned an error message — `suggest_outfit` was never called. This path is deterministic; an empty list always triggers the early return. |
+| 3 | Outfit mentions listing title | 5 of 5 | MET (5/5) | All five outfit strings contained "Y2K Butterfly Baby Tee" (or close variant). The title comes from the listing dict passed directly to `suggest_outfit`, not from model inference, so it appeared consistently. |
+| 4 | Fit card mentions price and platform | 5 of 5 | MET (5/5) | All five fit cards named "$42" and "Poshmark". Both values are injected into the prompt from the listing dict, so this was a prompt-pass-through rather than a model creativity question. |
+| 5 | Max_price filter respected | 5 of 5 | MET (5/5) | All 10 results returned for "casual top under $25" had prices ≤ $25. The filter is a single float comparison in `search_listings`; there is no code path that bypasses it. |
 
 **Diagnoses**
+
+No criteria were missed. All five met their targets across all five tries.
+
+**Were the targets too easy?** Criteria 2, 3, 4, and 5 all targeted 5 of 5 on paths that are fully deterministic — no model output, no variability. They passed because they couldn't fail. The one I'd tighten is **criterion 1**: I set it at 4 of 5 as a hedge against keyword-miss edge cases, but it passed 5 of 5. A stricter version would test multiple different phrasings of the same underlying item — e.g., "butterfly top", "Y2K baby tee", "pastel printed tee" — and require at least 4 of those 5 phrasings to return the same item. That would actually stress the keyword scorer rather than just confirming one well-matched query works every time.
 
 
 
