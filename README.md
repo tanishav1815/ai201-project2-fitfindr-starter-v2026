@@ -39,7 +39,7 @@
 
 ## What This Does
 
-<!-- Three or four sentences: what a user asks for, and what they get back. -->
+FitFindr lets a user describe a secondhand clothing item they want — like "vintage graphic tee under $30 size M" — and returns a styled outfit suggestion and a shareable caption. It searches a listings dataset for matching items, uses the user's existing wardrobe to suggest combinations, and formats the result as a short fit card the user could post. The agent runs a three-step planning loop: search, outfit, card.
 
 
 
@@ -50,6 +50,8 @@
 <!-- Four lines per tool. This is worth 2 points and it's the single most
      common place students lose them.
 
+     
+
      "Returns a list" earns NOTHING. The description has to say what is IN
      the list.
 
@@ -59,24 +61,24 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Filters the listings dataset by keyword, optional size, and optional price ceiling, then returns the best-matching items sorted by keyword overlap score.
+- **Inputs:** `description` (str), `size` (str | None), `max_price` (float | None)
+- **Returns:** A list of listing dicts, each containing `id` (str), `title` (str), `category` (str), `style_tags` (list), `size` (str), `condition` (str), `price` (float), `colors` (list), `brand` (str or None), `platform` (str) — sorted best match first, at most `config.SEARCH_RESULT_LIMIT` items.
+- **When it has nothing:** Returns an empty list `[]` — never `None`, never raises.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Given a listing and the user's wardrobe, asks the model to suggest one or two outfits that pair the new item with pieces the user already owns.
+- **Inputs:** `new_item` (dict — a listing dict as returned by `search_listings`), `wardrobe` (dict with an `'items'` key holding a list of wardrobe item dicts)
+- **Returns:** A non-empty string containing outfit suggestions (e.g. "Pair these jeans with your white oversized tee and chunky sneakers for a relaxed streetwear look.").
+- **When it has nothing:** If `wardrobe['items']` is empty, returns a string of general styling advice for the item — never an empty string, never raises.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Writes a two-to-four sentence caption styled like a real social post, mentioning the item, its price, and its platform once each.
+- **Inputs:** `outfit` (str — the suggestion string from `suggest_outfit`), `new_item` (dict — the listing dict)
+- **Returns:** A non-empty string caption (2–4 sentences) that reads like a post, not a product description.
+- **When it has nothing:** If `outfit` is empty or whitespace, returns a descriptive fallback message instead of raising.
 
 ---
 
@@ -93,13 +95,13 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, put a "no results found" message in the session and stop. Otherwise, take the first result and pass it to `suggest_outfit`. If `suggest_outfit` returns a non-empty string, pass it along with the listing to `create_fit_card` and return its output.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** The model parses the natural-language query to extract `description`, `size`, and `max_price` fields before calling `search_listings`.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** `listing` (the first result dict from `search_listings`), then `outfit` (the string from `suggest_outfit`), then `fit_card` (the string from `create_fit_card`).
 
 ---
 
