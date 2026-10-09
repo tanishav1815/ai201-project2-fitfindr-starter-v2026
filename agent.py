@@ -106,9 +106,53 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         than a stack trace. The import is already at the top of this file.
     """
     session = new_session(query, wardrobe)
+    iterations = 0
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    try:
+        iterations += 1
+        trace.check_iterations(iterations)
+
+        # Parse query using regex for size and price, rest is description
+        import re
+        size_match = re.search(r'\bsize\s+(\S+)', query, re.I)
+        price_match = re.search(r'under\s+\$?(\d+(?:\.\d+)?)', query, re.I)
+        size = size_match.group(1) if size_match else None
+        max_price = float(price_match.group(1)) if price_match else None
+        description = re.sub(r'\bsize\s+\S+', '', query, flags=re.I)
+        description = re.sub(r'under\s+\$?\d+(?:\.\d+)?', '', description, flags=re.I).strip()
+
+        session["parsed"] = {"description": description, "size": size, "max_price": max_price}
+
+        # Step 1: search
+        results = search_listings(description, size=size, max_price=max_price)
+        session["search_results"] = results
+
+        # Branch: nothing found → stop early with a useful message
+        if not results:
+            parts = []
+            if max_price is not None:
+                parts.append(f"raise your budget (currently under ${max_price:.0f})")
+            if size is not None:
+                parts.append(f"try a different size (currently '{size}')")
+            parts.append("use broader keywords")
+            session["error"] = (
+                f"No listings matched your search. You could: {'; or '.join(parts)}."
+            )
+            return session
+
+        # Step 2: pick first result
+        session["selected_item"] = results[0]
+
+        # Step 3: outfit suggestion
+        outfit = suggest_outfit(session["selected_item"], wardrobe)
+        session["outfit_suggestion"] = outfit
+
+        # Step 4: fit card
+        session["fit_card"] = create_fit_card(outfit, session["selected_item"])
+
+    except ModelUnavailable as exc:
+        session["error"] = str(exc)
+
     return session
 
 
