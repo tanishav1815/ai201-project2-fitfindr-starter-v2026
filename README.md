@@ -205,17 +205,74 @@ run fit. Grab them on my Depop right now for just $38.
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Full three-tool run returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Empty search stops before tool 2 | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Outfit mentions listing title | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card mentions price and platform | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Max_price filter respected | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
 **Real output from one try**, pasted as text, naming the file and function
 that produced it:
 
+Produced by `agent.py::run_agent`, tools in `tools.py`.
+
+**Criterion 1 — Try 1** (query: `vintage graphic tee under $30`, example wardrobe):
+
+```
+selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+
+Outfit suggestion:
+Here are two distinct outfit ideas that pair the Y2K Butterfly Baby Tee with pieces from your current wardrobe:
+
+Outfit 1: 2000s Streetwear Contrast
+Top: Y2K Butterfly Baby Tee
+Bottoms: Baggy straight-leg jeans (dark wash)
+Outerwear: Black cropped zip hoodie
+Shoes: Chunky white sneakers
+Accessories: Black crossbody bag
+
+Outfit 2: Casual Earth-Tone Retro
+Top: Y2K Butterfly Baby Tee (tucked in)
+Bottoms: Wide-leg khaki trousers
+Waist: Brown leather belt
+Outerwear: Vintage black denim jacket
+Shoes: Chunky white sneakers
+
+Fit card:
+Channeling major early 2000s pop star energy with this butterfly baby tee, perfect for styling with baggy denim or wide-leg trousers. Grab it on my Depop right now for just $18.00 before it's gone! ✨🦋
 ```
 
+**Criterion 2 — Try 1** (query: `designer ballgown size XXS under $5`):
+
+```
+[1] parse_query → {description: "designer ballgown", size: "XXS", max_price: 5.0}
+[2] search_listings (via MCP) → [] (empty)
+[3] branch → empty results — stopping before suggest_outfit
+
+No listings matched your search. You could: raise your budget (currently under $5); or try a different size (currently 'XXS'); or use broader keywords.
+```
+
+**Criterion 4 — Try 1** (query: `denim jacket under $60`):
+
+```
+Fit card:
+Still pinching myself over finding this light wash cropped denim jacket for just $42 on Poshmark! It's got that ultimate 90s streetwear vibe that instantly elevates a simple white tank and baggy jeans. Can't wait to style this piece on rotation all season long!
+```
+
+**Criterion 5 — Try 1** (query: `casual top under $25`, all 10 results):
+
+```
+Y2K Baby Tee — Butterfly Print $18.0
+Oversized Flannel Shirt — Plaid Red/Black $22.0
+Graphic Tee — 2003 Tour Bootleg Style $24.0
+Oversized Crewneck Sweatshirt — Vintage Navy $20.0
+Mesh Long-Sleeve Top — Black $15.0
+Henley Long Sleeve — Washed Burgundy $16.0
+Crochet Halter Top — Cream $22.0
+Vintage Polo Shirt — Forest Green $18.0
+Oversized College Crewneck — Faded Red $21.0
+Vintage Knit Vest — Argyle Brown/Cream $25.0
+All prices ≤ $25 ✓
 ```
 
 ---
