@@ -99,7 +99,7 @@ FitFindr lets a user describe a secondhand clothing item they want — like "vin
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** The model parses the natural-language query to extract `description`, `size`, and `max_price` fields before calling `search_listings`.
+**How the query is parsed:** Regex — `size\s+(\S+)` extracts size, `under\s+\$?(\d+)` extracts max_price, and both are stripped from the query string to produce the description.
 
 **What moves through the session:** `listing` (the first result dict from `search_listings`), then `outfit` (the string from `suggest_outfit`), then `fit_card` (the string from `create_fit_card`).
 
@@ -115,25 +115,51 @@ FitFindr lets a user describe a secondhand clothing item they want — like "vin
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'vintage graphic tee under $30'
 
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+  Outfit:   Here are two specific outfit ideas using the Y2K Butterfly Baby Tee and pieces from your current wardrobe:
+
+  Outfit 1: 2000s Streetwear Contrast
+  Tuck the Y2K Baby Tee into your Baggy straight-leg jeans (dark wash). Cinch the waist with the Brown leather belt.
+  Layer the Black cropped zip hoodie over top. Finish with Chunky white sneakers and the Black crossbody bag.
+
+  Outfit 2: Casual Cinch & Grunge
+  Pair the Y2K Baby Tee with your Wide-leg khaki trousers. Throw the Vintage black denim jacket over your shoulders,
+  and anchor the outfit with the Black combat boots.
+
+  Fit card: Found the ultimate Y2K streetwear piece for only $18.0! This butterfly baby tee looks so good styled
+  with baggy denim and a zip hoodie, or dressed down with grunge combat boots. Snagged this on depop and I'm
+  officially obsessed with the high-contrast 2000s vibe.
 ```
 
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+$ python -c "from tools import search_listings; results = search_listings('graphic tee', max_price=30); print(f'Found {len(results)} results'); [print(f'  {r[\"title\"]} ${r[\"price\"]}') for r in results[:3]]"
 
+Found 7 results
+  Y2K Baby Tee — Butterfly Print $18.0
+  Graphic Tee — 2003 Tour Bootleg Style $24.0
+  Mesh Long-Sleeve Top — Black $15.0
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe())[:200])"
 
+Here are two ways to style the vintage Levi's 501s using pieces already in your wardrobe, depending on the vibe you're going for:
+
+Outfit 1: Effortless 90s Casual
+* The Look: A balanced mix of...
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
 
+Nothing beats the feel of truly broken-in vintage denim for that effortless, off-duty model vibe. These medium wash
+Levi's 501s are begging to be paired with crisp white sneakers and an oversized tee for the ultimate Sunday coffee
+run fit. Grab them on my Depop right now for just $38.
 ```
 
 ---
@@ -149,15 +175,15 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help implementing `search_listings` with size filtering.
+- *What came back:* A plain substring match — `size.lower() in listing["size"].lower()` — which caused `"s"` to match `"us 9"` and `"l"` to match `"xl"`.
+- *What I changed:* Switched to a whole-word regex match using `re.search(r'\b' + re.escape(size_lower) + r'\b', ...)` so sizes only match at word boundaries.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help writing the empty-search error message in `run_agent`.
+- *What came back:* A generic "No results found" string.
+- *What I changed:* Rewrote it to name specific things the user could change — budget, size, or keywords — based on which filters were actually active in the session.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
