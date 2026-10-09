@@ -19,15 +19,15 @@ data earns credit; *"80% seemed reasonable"* does not.
 
 ---
 
+
+
 ## 1. A matching query completes all three tools
 
 Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
+4 of 5 because search_listings uses keyword matching, and some phrasings will score zero even when a real match exists in the data.
 
 ---
 
@@ -37,26 +37,16 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+5 of 5 because this path is deterministic — an empty list always triggers the stop branch, with no model variability involved.
 
 ---
 
 ## 3. Something about state
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know that the item your search found is the same item the
-     next tool received? Name something countable or observable.
-
-     This is the criterion people find hardest, because state failure doesn't
-     look like state failure — it looks like a tool problem. Something that
-     compares session["selected_item"] against what actually reached
-     suggest_outfit is the shape you're after. -->
-
-
+The outfit suggestion mentions the title of the listing returned by search_listings — in 5 of 5 tries.
 
 **Why this target:**
+5 of 5 because this is a direct pass of a dict field, not a model inference. If the title doesn't appear, the wrong item reached suggest_outfit. There's no variability to account for.
 
 
 
@@ -64,20 +54,10 @@ Given a query that matches no listings, the agent stops before calling
 
 ## 4. Something about the fit card
 
-<!-- YOU WRITE THIS ONE.
-
-     The fit card calls a model, so the same input can produce different words
-     each time. That's not a bug — it's the nature of the tool. So what would
-     make it acceptable?
-
-     Think about what you'd actually be unhappy to see. A caption that never
-     mentions the price? Two different items producing the same opening
-     sentence? A card longer than a caption anyone would post? Any of those can
-     be turned into a number. -->
-
-
+The fit card mentions the item's price and platform at least once each — in 5 of 5 tries.
 
 **Why this target:**
+5 of 5 because price and platform come from the listing dict, not from model creativity. The prompt always has them, so omitting them is a prompt failure, not a randomness issue.
 
 
 
@@ -85,16 +65,10 @@ Given a query that matches no listings, the agent stops before calling
 
 ## 5. Your choice
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. Speed, the empty
-     wardrobe path, what happens when the model can't be reached, whether the
-     search respects a price ceiling — anything, as long as it names a number
-     or an observable outcome. -->
-
-
+When the user specifies a max_price, every listing returned by search_listings has a price less than or equal to that value — in 5 of 5 tries.
 
 **Why this target:**
+5 of 5 because price filtering is a simple comparison on a float field. There is no ambiguity in the data or the logic — either the filter runs or it doesn't.
 
 
 
