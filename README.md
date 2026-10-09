@@ -185,6 +185,18 @@ run fit. Grab them on my Depop right now for just $38.
 - *What came back:* A generic "No results found" string.
 - *What I changed:* Rewrote it to name specific things the user could change — budget, size, or keywords — based on which filters were actually active in the session.
 
+**Moment 3 (Unit 4)**
+
+- *What I asked for:* Help writing the MCP tool description for `search_listings`.
+- *What came back:* A description that said "Returns a list of listings" without specifying what was in the list or what happens on no match.
+- *What I changed:* Added the specific field names in the return shape and an explicit empty-case contract ("Returns an empty list when nothing matches — never None, never an error") so external agents know exactly what to expect.
+
+**Moment 4 (Unit 4)**
+
+- *What I asked for:* Help diagnosing why criterion 1's before-run target felt too easy even though it passed.
+- *What came back:* A suggestion to just note it passed and move on.
+- *What I changed:* Instead updated the scenario to use a harder query phrasing ("y2k pastel tee" instead of "vintage graphic tee") that doesn't match on title words, making the scorer prove it can surface the item through style tags alone.
+
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 3.
@@ -405,6 +417,14 @@ $ python app.py ask 'designer ballgown size XXS under $5'
 <!-- For each criterion still missed: what you'd do, and why you stopped where
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
+
+No criteria were missed in either run. What is still weak:
+
+**Criterion 1 — keyword scorer returns noise.** The after-run query "y2k pastel tee under $30" returned cargo pants and biker shorts alongside the tee because those items have a "y2k" style tag. The right item ranked first, so the criterion passed, but the result set is polluted. To fix this I'd weight title matches higher than tag matches in the scorer — a keyword in the title is stronger signal than one in a style tag. I stopped here because the criterion only checks whether the run completes with a fit card, not whether the result set is clean.
+
+**Criterion 3 — tests a structural guarantee, not model behavior.** The outfit title check passes because the title is injected directly into the prompt. It doesn't verify that the model used the title meaningfully. A harder version would check that the outfit suggestion references specific wardrobe pieces by name, which would actually probe whether the model read the prompt. I didn't revise the criterion mid-unit because it was already locked in criteria.md.
+
+**MCP move — what changed and whether anything behaved differently:** In `agent.py`, replaced `search_listings(description, size, max_price)` with `call_tool("search_listings", {...})` from `mcp_client.py`. The MCP server starts as a subprocess, the client sends the call over stdio, and the return value is identical to the direct call. Nothing downstream changed. The one non-trivial issue was Python version: the default `.venv` uses Python 3.15 alpha, which is incompatible with the `anyio` dependency in the MCP library. Created a separate `.venv313` on Python 3.13 which resolved it.
 
 
 
