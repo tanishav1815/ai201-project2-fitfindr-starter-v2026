@@ -106,15 +106,16 @@ def run_agent(query: str, wardrobe: dict) -> dict:
       • A handler for ModelUnavailable, so a bad key produces a message rather
         than a stack trace. The import is already at the top of this file.
     """
+    import re
     session = new_session(query, wardrobe)
     iterations = 0
+    trace.start_trace()
 
     try:
         iterations += 1
         trace.check_iterations(iterations)
 
         # Parse query using regex for size and price, rest is description
-        import re
         size_match = re.search(r'\bsize\s+(\S+)', query, re.I)
         price_match = re.search(r'under\s+\$?(\d+(?:\.\d+)?)', query, re.I)
         size = size_match.group(1) if size_match else None
@@ -123,6 +124,8 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         description = re.sub(r'under\s+\$?\d+(?:\.\d+)?', '', description, flags=re.I).strip()
 
         session["parsed"] = {"description": description, "size": size, "max_price": max_price}
+        trace.step("parse_query", inputs={"query": query},
+                   returned=session["parsed"])
 
         # Step 1: search via MCP
         results = call_tool("search_listings", {
@@ -131,6 +134,9 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             "max_price": max_price,
         })
         session["search_results"] = results
+        trace.step("search_listings (via MCP)",
+                   inputs={"description": description, "size": size, "max_price": max_price},
+                   returned=results)
 
         # Branch: nothing found → stop early with a useful message
         if not results:
@@ -143,20 +149,36 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             session["error"] = (
                 f"No listings matched your search. You could: {'; or '.join(parts)}."
             )
+            trace.step("branch", note="empty results — stopping before suggest_outfit")
             return session
 
         # Step 2: pick first result
         session["selected_item"] = results[0]
+        trace.step("select_item", returned=session["selected_item"],
+                   note="took first result")
 
         # Step 3: outfit suggestion
         outfit = suggest_outfit(session["selected_item"], wardrobe)
         session["outfit_suggestion"] = outfit
+        trace.step("suggest_outfit",
+                   inputs={"item": session["selected_item"]["title"],
+                           "wardrobe_items": len(wardrobe.get("items", []))},
+                   returned=outfit)
 
         # Step 4: fit card
-        session["fit_card"] = create_fit_card(outfit, session["selected_item"])
+        fit_card = create_fit_card(outfit, session["selected_item"])
+        session["fit_card"] = fit_card
+        trace.step("create_fit_card",
+                   inputs={"item": session["selected_item"]["title"]},
+                   returned=fit_card)
 
     except ModelUnavailable as exc:
-        session["error"] = str(exc)
+        session["error"] = (
+            f"The model couldn't be reached: {exc}\n"
+            "Check your GEMINI_API_KEY in the .env file, or visit "
+            "aistudio.google.com to get a new key."
+        )
+        trace.step("error", note=str(exc))
 
     return session
 

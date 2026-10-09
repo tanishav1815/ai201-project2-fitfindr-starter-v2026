@@ -267,19 +267,43 @@ that produced it:
 **Happy path**
 
 ```
+$ python app.py ask 'vintage graphic tee under $30' --trace
 
+[1] parse_query
+      in:  dict with keys: query
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+[3] select_item
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+      →    took first result
+[4] suggest_outfit
+      in:  dict with keys: item, wardrobe_items
+      out: Here are two specific outfit ideas using the Y2K Butterfly Baby Tee and pieces from your current wardrobe: ...
+[5] create_fit_card
+      in:  dict with keys: item
+      out: Found the ultimate Y2K streetwear piece for only $18.0! ...
 ```
 
 **Empty search**
 
 ```
+$ python app.py ask 'designer ballgown size XXS under $5'
 
+[1] parse_query
+      in:  dict with keys: query
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+[3] branch
+      →    empty results — stopping before suggest_outfit
+
+  No listings matched your search. You could: raise your budget (currently under $5); or try a different size (currently 'XXS'); or use broader keywords.
 ```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything
-behaved differently afterwards. If the rewire didn't work, say exactly where it
-broke — the error text and the last thing that worked. That earns the point in
-full. -->
+**On the MCP move:** In `agent.py`, replaced the direct call to `search_listings(description, size, max_price)` with `call_tool("search_listings", {...})` from `mcp_client.py`. The original `.venv` used Python 3.15 alpha which is incompatible with the MCP library — created a new `.venv313` using Python 3.13 which resolved it. The return value was identical to the direct call; nothing downstream changed.
 
 
 
